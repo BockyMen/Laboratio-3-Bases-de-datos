@@ -1,0 +1,5 @@
+HSET musicapp:info nombre "MusicApp" descripcion "Aplicacion de musica" version "1.0"
+HGETALL musicapp:info
+HSET musicapp:artista:1 nombre "The Weeknd" genero "Pop" pais "Canada" edad 36
+HGETALL musicapp:artista:1
+ZINCRBY musicapp:reproducciones 1 cancion:1

@@ -1,0 +1,104 @@
+# este ejemplo largo fue hecho con inteligencia artifical para complementar la explicacion de los comandos de REDIS
+
+# ============================================================
+# MusicApp - Ejemplo completo de Redis (NoSQL clave-valor)
+# Ejecutar: redis-cli < ejemplo_completo.redis
+# Con Docker: docker exec -i redis-musica redis-cli < ejemplo_completo.redis
+# ============================================================
+
+# ---------- 0. Limpiar datos de ejemplos anteriores ----------
+DEL musicapp:info musicapp:artista:1 musicapp:artista:2 musicapp:artista:3 musicapp:artista:4
+DEL musicapp:cancion:1 musicapp:cancion:2 musicapp:cancion:3 musicapp:cancion:4 musicapp:cancion:5 musicapp:cancion:6
+DEL musicapp:genero:pop musicapp:genero:reggaeton musicapp:playlist:fiesta musicapp:playlist:relajada
+DEL musicapp:reproducciones musicapp:historial:ana musicapp:favoritas:ana musicapp:sesion:ana musicapp:usuario:ana musicapp:usuarios_conectados
+
+# ---------- 1. HASH: informacion general de la app ----------
+HSET musicapp:info nombre "MusicApp" descripcion "Aplicacion de musica" version "1.0"
+HGETALL musicapp:info
+
+# ---------- 2. HASH: artistas ----------
+HSET musicapp:artista:1 nombre "The Weeknd" genero "Pop" pais "Canada" edad 36
+HSET musicapp:artista:2 nombre "Ed Sheeran" genero "Pop" pais "Reino Unido" edad 35
+HSET musicapp:artista:3 nombre "Luis Fonsi" genero "Reggaeton" pais "Puerto Rico" edad 47
+HSET musicapp:artista:4 nombre "Maluma" genero "Reggaeton" pais "Colombia" edad 32
+HGETALL musicapp:artista:1
+HGET musicapp:artista:4 pais
+
+# ---------- 3. HASH: canciones (artista_id enlaza con el artista) ----------
+HSET musicapp:cancion:1 titulo "Blinding Lights" artista_id 1 genero "pop" anio 2019
+HSET musicapp:cancion:2 titulo "Save Your Tears" artista_id 1 genero "pop" anio 2020
+HSET musicapp:cancion:3 titulo "Shape of You" artista_id 2 genero "pop" anio 2017
+HSET musicapp:cancion:4 titulo "Despacito" artista_id 3 genero "reggaeton" anio 2017
+HSET musicapp:cancion:5 titulo "Hawai" artista_id 4 genero "reggaeton" anio 2020
+HSET musicapp:cancion:6 titulo "Perfect" artista_id 2 genero "pop" anio 2017
+HGETALL musicapp:cancion:1
+HMGET musicapp:cancion:4 titulo anio
+
+# ---------- 4. SET: canciones por genero (sin repetidos) ----------
+SADD musicapp:genero:pop 1 2 3 6
+SADD musicapp:genero:reggaeton 4 5
+SMEMBERS musicapp:genero:pop
+SCARD musicapp:genero:reggaeton
+
+# ---------- 5. SET: playlists y operaciones entre conjuntos ----------
+SADD musicapp:playlist:fiesta 1 4 5 3
+SADD musicapp:playlist:relajada 2 6 3
+SINTER musicapp:playlist:fiesta musicapp:playlist:relajada
+SUNION musicapp:playlist:fiesta musicapp:playlist:relajada
+SDIFF musicapp:playlist:fiesta musicapp:playlist:relajada
+SISMEMBER musicapp:playlist:fiesta 4
+
+# ---------- 6. SORTED SET: ranking de reproducciones ----------
+ZINCRBY musicapp:reproducciones 1 cancion:1
+ZINCRBY musicapp:reproducciones 5 cancion:1
+ZINCRBY musicapp:reproducciones 3 cancion:2
+ZINCRBY musicapp:reproducciones 4 cancion:3
+ZINCRBY musicapp:reproducciones 8 cancion:4
+ZINCRBY musicapp:reproducciones 2 cancion:5
+ZINCRBY musicapp:reproducciones 1 cancion:6
+ZREVRANGE musicapp:reproducciones 0 2 WITHSCORES
+ZSCORE musicapp:reproducciones cancion:4
+ZREVRANK musicapp:reproducciones cancion:1
+
+# ---------- 7. HASH: perfil de usuario ----------
+HSET musicapp:usuario:ana nombre "Ana" plan "gratis" pais "Colombia"
+HINCRBY musicapp:usuario:ana canciones_escuchadas 1
+HGETALL musicapp:usuario:ana
+
+# ---------- 8. LIST: historial reciente (solo las ultimas 5) ----------
+LPUSH musicapp:historial:ana 1
+LPUSH musicapp:historial:ana 4
+LPUSH musicapp:historial:ana 2
+LPUSH musicapp:historial:ana 6
+LPUSH musicapp:historial:ana 3
+LPUSH musicapp:historial:ana 5
+LTRIM musicapp:historial:ana 0 4
+LRANGE musicapp:historial:ana 0 -1
+LLEN musicapp:historial:ana
+
+# ---------- 9. SET: canciones favoritas del usuario ----------
+SADD musicapp:favoritas:ana 1 4
+SISMEMBER musicapp:favoritas:ana 1
+SREM musicapp:favoritas:ana 4
+SMEMBERS musicapp:favoritas:ana
+
+# ---------- 10. STRING con TTL: sesion que expira sola ----------
+SET musicapp:sesion:ana "escuchando:cancion:1" EX 60
+GET musicapp:sesion:ana
+TTL musicapp:sesion:ana
+
+# ---------- 11. Contadores ----------
+INCR musicapp:usuarios_conectados
+INCR musicapp:usuarios_conectados
+DECR musicapp:usuarios_conectados
+GET musicapp:usuarios_conectados
+
+# ---------- 12. Actualizar, verificar y borrar ----------
+HSET musicapp:artista:1 edad 37
+HGET musicapp:artista:1 edad
+HDEL musicapp:artista:1 edad
+EXISTS musicapp:artista:1
+TYPE musicapp:reproducciones
+KEYS musicapp:*
+DEL musicapp:sesion:ana
+EXISTS musicapp:sesion:ana
